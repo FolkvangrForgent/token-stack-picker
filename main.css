@@ -10,19 +10,21 @@
 	}
 
 	.portrait {
-		box-sizing: border-box;
 		width: var(--size);
 		height: var(--size);
-		border: 2px solid transparent;
-		border-radius: 8px;
+		border: 4px solid transparent;
+		border-radius: 14px;
 		cursor: pointer;
 		position: relative;
 
 		> * {
+			pointer-events: none;
+		}
+
+		> :is(img, video) {
 			width: 100%;
 			height: 100%;
 			object-fit: contain;
-			pointer-events: none;
 		}
 
 		&:hover {
@@ -33,33 +35,23 @@
 			border-color: var(--target);
 		}
 
-		&.obscured > * {
+		&.obscured > :is(img, video) {
 			filter: brightness(0) invert(0.5);
 		}
 
 		.pips {
 			position: absolute;
-			top: 2px;
-			right: 2px;
-			width: auto;
-			height: auto;
+			inset: 4px 4px auto;
 			display: flex;
-			flex-direction: row-reverse;
-			flex-wrap: wrap;
-			align-items: flex-start;
-			align-content: flex-start;
-			gap: 2px;
-			max-width: calc(100% - 4px);
-			pointer-events: none;
+			flex-flow: row-reverse wrap;
+			gap: 4px;
 		}
 
 		.pip {
-			box-sizing: border-box;
-			flex: none;
-			width: 16px;
-			height: 16px;
-			border: 2px solid var(--color-text-emphatic);
-			border-radius: 4px;
+			width: 12px;
+			height: 12px;
+			border: 1px solid var(--color-text-emphatic);
+			border-radius: 6px;
 			background: var(--pip-color);
 		}
 	}
