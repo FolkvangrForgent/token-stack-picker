@@ -15,7 +15,7 @@ class TokenStackPicker extends foundry.applications.api.ApplicationV2 {
 		if (!canvas.ready || !mousePosition) return;
 		await foundry.applications.instances.get('token-stack-picker')?.close({ animate: false });
 		const tokenIdentifiers = canvas.tokens.placeables
-			.slice().reverse()
+			.toReversed()
 			.filter((token) => token.isVisible && token.bounds.contains(mousePosition.x, mousePosition.y))
 			.map((token) => token.id);
 		if (!tokenIdentifiers.length) return;
