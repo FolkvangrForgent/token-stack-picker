@@ -8,6 +8,8 @@
 
 This module aims to make it easier to target or open sheets of tokens that are on top of each other. This should work on all systems but is used and tested on the PF2e and SF2e systems. If you are looking for a particular feature or are having an issue please open up an `Issue`!
 
+![Example of tocken stack picker window](image.png)
+
 ## Usage
 
 1. Hover over a stack of tokens on the canvas
@@ -34,9 +36,9 @@ The token portraits have the following elements:
 
 | Setting       | Scope  | Default   | Description                                                                   |
 | ------------- | ------ | --------- | ----------------------------------------------------------------------------- |
-| Use Actor Art | World  | Off       | Show actor images instead of token images                                     |
-| Portrait Size | Client | 100       | Size in pixels of each token portrait in the grid (50 to 200, in steps of 10) |
-| Grid Columns  | Client | 3         | Maximum number of portraits per row in the grid (1 to 6)                      |
+| Use Actor Art | World  | `Off`     | Show actor images instead of token images                                     |
+| Portrait Size | Client | `100`     | Size in pixels of each token portrait in the grid (50 to 200, in steps of 10) |
+| Grid Columns  | Client | `3`       | Maximum number of portraits per row in the grid (1 to 6)                      |
 | Target Color  | Client | `#ff6400` | Color of the highlight around targeted tokens                                 |
 
 ## Keybindings
