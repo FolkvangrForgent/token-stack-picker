@@ -1,0 +1,31 @@
+{
+	"id": "token-stack-picker",
+	"title": "Token Stack Picker",
+	"description": "Helper that displays a window with all the tokens under the mouse to allow easy targeting of stacked tokens.",
+	"version": "#{VERSION}#",
+	"url": "#{URL}#",
+	"manifest": "#{MANIFEST}#",
+	"download": "#{DOWNLOAD}#",
+	"authors": [
+		{
+			"name": "FolkvangrForgent"
+		},
+		{
+			"name": "Claude Sonnet 5.5",
+			"url": "https://www.anthropic.com"
+		}
+	],
+	"compatibility": {
+		"minimum": "14",
+		"verified": "14.368"
+	},
+	"esmodules": ["main.js"],
+	"styles": ["main.css"],
+	"languages": [
+		{
+			"lang": "en",
+			"name": "English",
+			"path": "en.json"
+		}
+	]
+}

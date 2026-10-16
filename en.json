@@ -1,0 +1,28 @@
+{
+	"TokenStackPicker": {
+		"Settings": {
+			"UseActorArt": {
+				"Name": "Use Actor Art",
+				"Hint": "Show actor images instead of token images"
+			},
+			"PortraitSize": {
+				"Name": "Portrait Size",
+				"Hint": "Size in pixels of each token portrait in the grid"
+			},
+			"GridColumns": {
+				"Name": "Grid Columns",
+				"Hint": "Maximum number of portraits per row in the grid"
+			},
+			"TargetColor": {
+				"Name": "Target Color",
+				"Hint": "Color of the highlight around targeted tokens"
+			}
+		},
+		"Keybindings": {
+			"Open": {
+				"Name": "Open Token Stack Picker",
+				"Hint": "Open the token stacker picker window at the current mouse position"
+			}
+		}
+	}
+}
