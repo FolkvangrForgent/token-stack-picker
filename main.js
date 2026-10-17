@@ -11,17 +11,21 @@ class TokenStackPicker extends foundry.applications.api.ApplicationV2 {
 
 	#listenerAbortController = new AbortController();
 
-	static async open(mousePosition = canvas.mousePosition) {
-		if (!canvas.ready || !mousePosition) return;
+	static async open(mousePosition, { targetMode } = {}) {
+		if (!canvas.ready) return;
+		mousePosition ??= canvas.mousePosition;
+		if (!mousePosition) return;
 		await foundry.applications.instances.get('token-stack-picker')?.close({ animate: false });
 		const tokenIdentifiers = canvas.tokens.placeables
 			.toReversed()
 			.filter((token) => token.isVisible && token.bounds.contains(mousePosition.x, mousePosition.y))
 			.map((token) => token.id);
 		if (!tokenIdentifiers.length) return;
+		else if (targetMode === 'all') canvas.tokens.setTargets(tokenIdentifiers);
+		else if (targetMode === 'none') canvas.tokens.setTargets([]);
 		const globalPosition = canvas.stage.toGlobal(mousePosition);
 		const { colorScheme, uiScale } = game.settings.get('core', 'uiConfig');
-		const windowCursorOffset = (GRID_PAD_PX + game.settings.get('token-stack-picker', 'portraitSize') / 2) * uiScale;
+		const windowCursorOffset = (GRID_PAD_PX + game.settings.get('token-stack-picker', 'gridSize') / 2) * uiScale;
 		const colorSchemeName = colorScheme.applications || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
 		new this({
 			tokenIdentifiers,
@@ -39,23 +43,28 @@ class TokenStackPicker extends foundry.applications.api.ApplicationV2 {
 		gridElement.className = 'grid';
 		for (const tokenIdentifier of this.options.tokenIdentifiers) {
 			const tokenObject = canvas.tokens.get(tokenIdentifier);
-			if (!tokenObject) continue;
-			const portraitElement = document.createElement('div');
-			portraitElement.className = 'portrait';
-			portraitElement.dataset.tokenIdentifier = tokenIdentifier;
-			portraitElement.classList.toggle('targeted', tokenObject.isTargeted);
-			portraitElement.classList.toggle('obscured', !(game.user.isGM || !tokenObject.detectionFilter));
-			if (game.user.isGM || (!tokenObject.detectionFilter && tokenObject.document.playersCanSeeName)) {
-				portraitElement.dataset.tooltip = tokenObject.document.name;
+			if (tokenObject) {
+				// create portrait element
+				const portraitElement = document.createElement('div');
+				portraitElement.className = 'portrait';
+				portraitElement.classList.toggle('targeted', tokenObject.isTargeted);
+				portraitElement.classList.toggle('controlled', tokenObject.controlled);
+				portraitElement.classList.toggle('obscured', !(tokenObject.document.isOwner || !tokenObject.detectionFilter));
+				portraitElement.dataset.tokenIdentifier = tokenObject.id;
+				if (!tokenObject.detectionFilter && (tokenObject.document.isOwner || tokenObject.document.playersCanSeeName)) {
+					portraitElement.dataset.tooltip = tokenObject.document.name;
+				}
+				gridElement.append(portraitElement);
+				// create media element
+				const mediaSource = (game.settings.get('token-stack-picker', 'useActorArt') && tokenObject.actor?.img) || tokenObject.document.texture.src;
+				const isVideoSource = foundry.helpers.media.VideoHelper.hasVideoExtension(mediaSource);
+				const mediaElement = document.createElement(isVideoSource ? 'video' : 'img');
+				if (isVideoSource) Object.assign(mediaElement, { autoplay: true, loop: true, muted: true });
+				mediaElement.src = mediaSource;
+				portraitElement.append(mediaElement);
+				// create pips element
+				this.#renderPips(portraitElement, tokenObject);
 			}
-			const mediaSource = (game.settings.get('token-stack-picker', 'useActorArt') && tokenObject.actor?.img) || tokenObject.document.texture.src;
-			const isVideoSource = foundry.helpers.media.VideoHelper.hasVideoExtension(mediaSource);
-			const mediaElement = document.createElement(isVideoSource ? 'video' : 'img');
-			if (isVideoSource) Object.assign(mediaElement, { autoplay: true, loop: true, muted: true });
-			mediaElement.src = mediaSource;
-			portraitElement.append(mediaElement);
-			this.#renderPips(portraitElement, tokenObject);
-			gridElement.append(portraitElement);
 		}
 		return gridElement;
 	}
@@ -66,42 +75,44 @@ class TokenStackPicker extends foundry.applications.api.ApplicationV2 {
 
 	async _onFirstRender(renderContext, renderOptions) {
 		await super._onFirstRender(renderContext, renderOptions);
-		this.element.style.setProperty('--target', String(game.settings.get('token-stack-picker', 'targetColor')));
-		this.element.style.setProperty('--size', `${game.settings.get('token-stack-picker', 'portraitSize')}px`);
-		this.element.style.setProperty('--columns', game.settings.get('token-stack-picker', 'gridColumns'));
-		this.element.style.setProperty('--gap', `${GRID_GAP_PX}px`);
-		this.element.style.setProperty('--pad', `${GRID_PAD_PX}px`);
-		const { signal } = this.#listenerAbortController;
-		this.element.addEventListener('click', this.#onClick, { signal });
-		this.element.addEventListener('contextmenu', this.#onContextMenu, { signal });
-		this.element.addEventListener('pointerleave', this.#dismiss, { signal });
-		document.addEventListener('pointermove', this.#onPointerOutside, { capture: true, signal });
-		document.addEventListener('pointerdown', this.#onPointerOutside, { capture: true, signal });
-		window.addEventListener('blur', this.#dismiss, { signal });
-		window.addEventListener('keydown', this.#onKeyDown, { capture: true, signal });
-		Hooks.on('targetToken', this.#onTargetToken);
-		Hooks.on('deleteToken', this.#onDeleteToken);
-		Hooks.on('canvasPan', this.#dismiss);
-		Hooks.on('canvasTearDown', this.#dismiss);
+		this.element.style.setProperty('--target-color', String(game.settings.get('token-stack-picker', 'targetColor')));
+		this.element.style.setProperty('--control-color', String(game.settings.get('token-stack-picker', 'controlColor')));
+		this.element.style.setProperty('--grid-size', `${game.settings.get('token-stack-picker', 'gridSize')}px`);
+		this.element.style.setProperty('--grid-columns', game.settings.get('token-stack-picker', 'gridColumns'));
+		this.element.style.setProperty('--grid-gap', `${GRID_GAP_PX}px`);
+		this.element.style.setProperty('--grid-pad', `${GRID_PAD_PX}px`);
+		this.element.addEventListener('auxclick', this.#onAuxClick, { signal: this.#listenerAbortController.signal });
+		this.element.addEventListener('click', this.#onClick, { signal: this.#listenerAbortController.signal });
+		this.element.addEventListener('contextmenu', this.#onContextMenu, { signal: this.#listenerAbortController.signal });
+		this.element.addEventListener('mousedown', this.#onMouseDown, { signal: this.#listenerAbortController.signal });
+		document.addEventListener('pointerdown', this.#onPointerOutside, { capture: true, signal: this.#listenerAbortController.signal });
+		// document.addEventListener('pointermove', this.#onPointerOutside, { capture: true, signal: this.#listenerAbortController.signal }); // FIX target is canvas#board
+		window.addEventListener('keydown', this.#onKeyDown, { capture: true, signal: this.#listenerAbortController.signal });
+		for (const [hookName, handler] of Object.entries(this.#hooks)) Hooks.on(hookName, handler);
 	}
 
 	_onClose(closeOptions) {
 		super._onClose(closeOptions);
 		this.#listenerAbortController.abort();
-		Hooks.off('targetToken', this.#onTargetToken);
-		Hooks.off('deleteToken', this.#onDeleteToken);
-		Hooks.off('canvasPan', this.#dismiss);
-		Hooks.off('canvasTearDown', this.#dismiss);
+		for (const [hookName, handler] of Object.entries(this.#hooks)) Hooks.off(hookName, handler);
 	}
 
-	#isTargetKey(keyboardEvent) {
+	get #hooks() {
+		return {
+			targetToken: this.#onTargetToken,
+			controlToken: this.#onControlToken,
+			deleteToken: this.#onDeleteToken,
+			canvasTearDown: this.#dismiss
+		};
+	}
+
+	#matchesKeybinding(keyboardEvent, bindings, reservedModifiers = []) {
 		const pressedModifiers = new Set();
 		if (keyboardEvent.shiftKey) pressedModifiers.add('Shift');
 		if (keyboardEvent.altKey) pressedModifiers.add('Alt');
 		if (keyboardEvent.ctrlKey || keyboardEvent.metaKey) pressedModifiers.add('Control');
-		const coreTargetBindings = game.keybindings.get('core', 'target');
-		const activeBindings = coreTargetBindings.length ? coreTargetBindings : game.keybindings.get('token-stack-picker', 'open');
-		return activeBindings.some(({ key: boundKey, modifiers: boundModifiers }) =>
+		for (const reservedModifier of reservedModifiers) pressedModifiers.delete(reservedModifier);
+		return bindings.some(({ key: boundKey, modifiers: boundModifiers }) =>
 			boundKey === keyboardEvent.code
 			&& boundModifiers.length === pressedModifiers.size
 			&& boundModifiers.every(modifier => pressedModifiers.has(modifier)));
@@ -114,20 +125,27 @@ class TokenStackPicker extends foundry.applications.api.ApplicationV2 {
 			this.#dismiss();
 			return;
 		}
-		if (!this.#isTargetKey(keyboardEvent)) return;
+		if (!this.#matchesKeybinding(keyboardEvent, game.keybindings.get('core', 'target'))) return;
 		const hoveredPortraitElement = this.element.querySelector('.portrait:hover');
 		const hoveredToken = canvas.tokens.get(hoveredPortraitElement?.dataset.tokenIdentifier);
 		if (!hoveredToken) return;
 		keyboardEvent.preventDefault();
 		keyboardEvent.stopImmediatePropagation();
-		if (!keyboardEvent.repeat) hoveredToken.setTarget(!hoveredToken.isTargeted, { releaseOthers: false });
+		if (!keyboardEvent.repeat) canvas.tokens.setTargets([hoveredToken.id], { mode: hoveredToken.isTargeted ? 'release' : 'acquire' });
 	};
 
 	#onTargetToken = (targetingUser, token, isTargeted) => {
 		const portraitElement = this.element.querySelector(`[data-token-identifier="${token.id}"]`);
 		if (!portraitElement) return;
-		if (targetingUser === game.user) portraitElement.classList.toggle('targeted', isTargeted);
-		else this.#renderPips(portraitElement, token);
+		if (targetingUser === game.user) {
+			portraitElement.classList.toggle('targeted', isTargeted);
+		} else {
+			this.#renderPips(portraitElement, token);
+		}
+	};
+
+	#onControlToken = (token, isControlled) => {
+		this.element.querySelector(`[data-token-identifier="${token.id}"]`)?.classList.toggle('controlled', isControlled);
 	};
 
 	#renderPips(portraitElement, token) {
@@ -167,10 +185,9 @@ class TokenStackPicker extends foundry.applications.api.ApplicationV2 {
 	}
 
 	#canViewActorSheet(token) {
-		if (!token.actor) return false;
-		// Sensed-but-unseen tokens are shown as silhouettes, so the sheet must not reveal what they are
-		if (!game.user.isGM && token.detectionFilter) return false;
-		return token.actor.testUserPermission(game.user, 'LIMITED');
+		return !!token.actor
+			&& (token.document.isOwner || !token.detectionFilter)
+			&& token.actor.testUserPermission(game.user, 'LIMITED');
 	}
 
 	#openActorSheet(token) {
@@ -184,10 +201,29 @@ class TokenStackPicker extends foundry.applications.api.ApplicationV2 {
 	#onClick = (mouseEvent) => {
 		const token = this.#getTokenFromEvent(mouseEvent);
 		if (!token) return;
-		token.setTarget(!token.isTargeted, { releaseOthers: false });
+		const mode = mouseEvent.shiftKey ? 'acquire' : mouseEvent.altKey ? 'release' : 'replace';
+		canvas.tokens.setTargets([token.id], { mode });
 	};
 
 	#onContextMenu = (mouseEvent) => {
+		mouseEvent.preventDefault();
+		const token = this.#getTokenFromEvent(mouseEvent);
+		if (!token) return;
+		if (mouseEvent.shiftKey) {
+			if (token.document.isOwner) token.control({ releaseOthers: false });
+		} else if (mouseEvent.altKey) {
+			token.release();
+		} else if (token.document.isOwner) {
+			token.control({ releaseOthers: true });
+		}
+	};
+
+	#onMouseDown = (mouseEvent) => {
+		if (mouseEvent.button === 1) mouseEvent.preventDefault();
+	};
+
+	#onAuxClick = (mouseEvent) => {
+		if (mouseEvent.button !== 1) return;
 		mouseEvent.preventDefault();
 		const token = this.#getTokenFromEvent(mouseEvent);
 		if (!token || !this.#canViewActorSheet(token)) return;
@@ -205,39 +241,47 @@ Hooks.once('init', () => {
 		type: Boolean,
 		default: false
 	});
-	game.settings.register('token-stack-picker', 'portraitSize', {
-		name: 'TokenStackPicker.Settings.PortraitSize.Name',
-		hint: 'TokenStackPicker.Settings.PortraitSize.Hint',
+	game.settings.register('token-stack-picker', 'gridSize', {
+		name: 'TokenStackPicker.Settings.GridSize.Name',
+		hint: 'TokenStackPicker.Settings.GridSize.Hint',
 		scope: 'client',
 		config: true,
-		type: new foundry.data.fields.NumberField({
-			required: true, nullable: false, integer: true, min: 50, max: 200, step: 10, initial: 100
-		})
+		type: new foundry.data.fields.NumberField({ required: true, nullable: false, integer: true, min: 50, max: 200, step: 10, initial: 100 })
 	});
 	game.settings.register('token-stack-picker', 'gridColumns', {
 		name: 'TokenStackPicker.Settings.GridColumns.Name',
 		hint: 'TokenStackPicker.Settings.GridColumns.Hint',
 		scope: 'client',
 		config: true,
-		type: new foundry.data.fields.NumberField({
-			required: true, nullable: false, integer: true, min: 1, max: 6, step: 1, initial: 3
-		})
+		type: new foundry.data.fields.NumberField({ required: true, nullable: false, integer: true, min: 1, max: 6, step: 1, initial: 3 })
 	});
 	game.settings.register('token-stack-picker', 'targetColor', {
 		name: 'TokenStackPicker.Settings.TargetColor.Name',
 		hint: 'TokenStackPicker.Settings.TargetColor.Hint',
 		scope: 'client',
 		config: true,
-		type: new foundry.data.fields.ColorField({ required: true, nullable: false, initial: '#ff6400' })
+		type: new foundry.data.fields.ColorField({ required: true, nullable: false, initial: '#33BBEE' })
+	});
+	game.settings.register('token-stack-picker', 'controlColor', {
+		name: 'TokenStackPicker.Settings.ControlColor.Name',
+		hint: 'TokenStackPicker.Settings.ControlColor.Hint',
+		scope: 'client',
+		config: true,
+		type: new foundry.data.fields.ColorField({ required: true, nullable: false, initial: '#EE7733' })
 	});
 	game.keybindings.register('token-stack-picker', 'open', {
 		name: 'TokenStackPicker.Keybindings.Open.Name',
 		hint: 'TokenStackPicker.Keybindings.Open.Hint',
 		editable: [{ key: 'KeyG' }],
-		onDown: () => {
-			TokenStackPicker.open();
+		reservedModifiers: ['Shift', 'Alt'],
+		onDown: ({ isShift, isAlt }) => {
+			const isPickerOpen = foundry.applications.instances.get('token-stack-picker')?.rendered;
+			const targetMode = isPickerOpen ? undefined : isShift ? 'all' : isAlt ? 'none' : undefined;
+			TokenStackPicker.open(undefined, { targetMode });
 			return true;
 		}
 	});
-	game.modules.get('token-stack-picker').api = { open: canvasPoint => TokenStackPicker.open(canvasPoint) };
+	game.modules.get('token-stack-picker').api = {
+		open: (canvasPoint, options) => TokenStackPicker.open(canvasPoint, options)
+	};
 });

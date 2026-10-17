@@ -5,8 +5,8 @@
 				"Name": "Use Actor Art",
 				"Hint": "Show actor images instead of token images"
 			},
-			"PortraitSize": {
-				"Name": "Portrait Size",
+			"GridSize": {
+				"Name": "Grid Size",
 				"Hint": "Size in pixels of each token portrait in the grid"
 			},
 			"GridColumns": {
@@ -15,13 +15,17 @@
 			},
 			"TargetColor": {
 				"Name": "Target Color",
-				"Hint": "Color of the highlight around targeted tokens"
+				"Hint": "Color of the target on targeted tokens"
+			},
+			"ControlColor": {
+				"Name": "Control Color",
+				"Hint": "Color of the highlight on controlled tokens"
 			}
 		},
 		"Keybindings": {
 			"Open": {
 				"Name": "Open Token Stack Picker",
-				"Hint": "Open the token stacker picker window at the current mouse position"
+				"Hint": "Open the token stack picker window at the current mouse position. Hold Shift to target every token in the stack or Alt to clear all targets"
 			}
 		}
 	}
