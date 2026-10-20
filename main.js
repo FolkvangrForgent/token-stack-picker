@@ -86,7 +86,7 @@ class TokenStackPicker extends foundry.applications.api.ApplicationV2 {
 		this.element.addEventListener('contextmenu', this.#onContextMenu, { signal: this.#listenerAbortController.signal });
 		this.element.addEventListener('mousedown', this.#onMouseDown, { signal: this.#listenerAbortController.signal });
 		document.addEventListener('pointerdown', this.#onPointerOutside, { capture: true, signal: this.#listenerAbortController.signal });
-		// document.addEventListener('pointermove', this.#onPointerOutside, { capture: true, signal: this.#listenerAbortController.signal }); // FIX target is canvas#board
+		document.addEventListener('pointermove', this.#onPointerOutside, { capture: true, signal: this.#listenerAbortController.signal });
 		window.addEventListener('keydown', this.#onKeyDown, { capture: true, signal: this.#listenerAbortController.signal });
 		for (const [hookName, handler] of Object.entries(this.#hooks)) Hooks.on(hookName, handler);
 	}
@@ -168,7 +168,11 @@ class TokenStackPicker extends foundry.applications.api.ApplicationV2 {
 	};
 
 	#onPointerOutside = (pointerEvent) => {
-		if (this.rendered && !this.element.contains(pointerEvent.target)) this.#dismiss();
+		if (!this.rendered) return;
+		const { left, right, top, bottom } = this.element.getBoundingClientRect();
+		const { clientX, clientY } = pointerEvent;
+		if (clientX >= left && clientX <= right && clientY >= top && clientY <= bottom) return;
+		this.#dismiss();
 	};
 
 	#onDeleteToken = (tokenDocument) => {
@@ -246,7 +250,7 @@ Hooks.once('init', () => {
 		hint: 'TokenStackPicker.Settings.GridSize.Hint',
 		scope: 'client',
 		config: true,
-		type: new foundry.data.fields.NumberField({ required: true, nullable: false, integer: true, min: 50, max: 200, step: 10, initial: 100 })
+		type: new foundry.data.fields.NumberField({ required: true, nullable: false, integer: true, min: 100, max: 200, initial: 150 })
 	});
 	game.settings.register('token-stack-picker', 'gridColumns', {
 		name: 'TokenStackPicker.Settings.GridColumns.Name',

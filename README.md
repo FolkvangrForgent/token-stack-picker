@@ -8,29 +8,34 @@
 
 This module aims to make it easier to target or open sheets of tokens that are on top of each other. This should work on all systems but is used and tested on the PF2e and SF2e systems. If you are looking for a particular feature or are having an issue please open up an `Issue`!
 
-![Example of tocken stack picker window](image.png)
+![Example of token stack picker window](image.png)
 
 ## Usage
 
 1. Hover over a stack of tokens on the canvas
 2. Press `G` to open a window that shows a grid of portraits for each visible token under the cursor
-3. Perform one of the following when over a token's portrait:
-- Left Click: Toggle targeting on the token
-- Right Click: Open the token's actor sheet if you have permission to do so and close the window
-- Press Core Target Keybind or Module Keybind if Core Target Keybind is not set: Toggle targeting on the token
-4. Close the window by doing any of the following:
-- Press Escape
-- Move the pointer or click outside the window
-- Pan or Zoom the canvas
-- Change the scene
-- Tab out of browser
+3. Below is all the actions that can be preformed and what they do:
+| Action                  | Description                           |
+| ----------------------- | ------------------------------------- |
+| Core Target Keybind     | Toggle targeting token                |
+| `Left Click`            | Target token                          |
+| `Alt` + `Left Click`    | Remove token from targeted token(s)   |
+| `Shift` + `Left Click`  | Add token to targeted token(s)        |
+| `Right Click`           | Control token                         |
+| `Alt` + `Right Click`   | Remove token from controlled token(s) |
+| `Shift` + `Right Click` | Add token to controlled token(s)      |
+4. To close the window do any of the following:
+- Press `Esc`
+- Move Pointer outside window
+- Click outside window
 
 ## Token Portraits
 
 The token portraits have the following elements:
-- Target highlight border: you are targeting the token this portrait belongs to
-- Hover outline: The portrait under your pointer
-- Colored pips: Other users who are also targeting this token
+- Hovered token outline: Shows what token actions would be on
+- Controlled token outline: Shows what token(s) in the window are currently being controlled
+- Target token arrows: Shows what token(s) in the window are currently being targeted
+- Colored pips: Shows what token(s) in the window are currently being targeted by other users
 
 ## Settings
 
@@ -39,7 +44,8 @@ The token portraits have the following elements:
 | Use Actor Art | World  | `Off`     | Show actor images instead of token images                                     |
 | Portrait Size | Client | `100`     | Size in pixels of each token portrait in the grid (50 to 200, in steps of 10) |
 | Grid Columns  | Client | `3`       | Maximum number of portraits per row in the grid (1 to 6)                      |
-| Target Color  | Client | `#ff6400` | Color of the highlight around targeted tokens                                 |
+| Target Color  | Client | `#33BBEE` | Color of the arrows around targeted token(s)                                  |
+| Control Color | Client | `#EE7733` | Color of the highlight around controlled token(s)                             |
 
 ## Keybindings
 
