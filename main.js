@@ -9,13 +9,17 @@ class TokenStackPicker extends foundry.applications.api.ApplicationV2 {
 		tokenIdentifiers: []
 	};
 
+	static #openRequestCounter = 0;
+
 	#listenerAbortController = new AbortController();
 
 	static async open({ mode, position } = {}) {
 		if (!canvas.ready) return;
 		const canvasPoint = position ?? canvas.mousePosition;
 		if (!canvasPoint) return;
+		const openRequest = ++TokenStackPicker.#openRequestCounter;
 		await foundry.applications.instances.get('token-stack-picker')?.close({ animate: false });
+		if (openRequest !== TokenStackPicker.#openRequestCounter) return;
 		const tokenIdentifiers = canvas.tokens.placeables
 			.toReversed()
 			.filter((token) => token.isVisible && token.bounds.contains(canvasPoint.x, canvasPoint.y))
