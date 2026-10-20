@@ -11,23 +11,23 @@ class TokenStackPicker extends foundry.applications.api.ApplicationV2 {
 
 	#listenerAbortController = new AbortController();
 
-	static async open(mousePosition, { targetMode } = {}) {
+	static async open({ mode, position } = {}) {
 		if (!canvas.ready) return;
-		mousePosition ??= canvas.mousePosition;
-		if (!mousePosition) return;
+		const canvasPoint = position ?? canvas.mousePosition;
+		if (!canvasPoint) return;
 		await foundry.applications.instances.get('token-stack-picker')?.close({ animate: false });
 		const tokenIdentifiers = canvas.tokens.placeables
 			.toReversed()
-			.filter((token) => token.isVisible && token.bounds.contains(mousePosition.x, mousePosition.y))
+			.filter((token) => token.isVisible && token.bounds.contains(canvasPoint.x, canvasPoint.y))
 			.map((token) => token.id);
 		if (!tokenIdentifiers.length) return;
-		else if (targetMode === 'all') canvas.tokens.setTargets(tokenIdentifiers);
-		else if (targetMode === 'none') canvas.tokens.setTargets([]);
-		const globalPosition = canvas.stage.toGlobal(mousePosition);
+		if (mode === 'target') canvas.tokens.setTargets(tokenIdentifiers, { mode: 'acquire' });
+		else if (mode === 'untarget') canvas.tokens.setTargets(tokenIdentifiers, { mode: 'release' });
+		const globalPosition = canvas.stage.toGlobal(canvasPoint);
 		const { colorScheme, uiScale } = game.settings.get('core', 'uiConfig');
 		const windowCursorOffset = (GRID_PAD_PX + game.settings.get('token-stack-picker', 'gridSize') / 2) * uiScale;
 		const colorSchemeName = colorScheme.applications || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
-		new this({
+		return new this({
 			tokenIdentifiers,
 			classes: [`theme-${colorSchemeName}`],
 			position: {
@@ -280,12 +280,11 @@ Hooks.once('init', () => {
 		reservedModifiers: ['Shift', 'Alt'],
 		onDown: ({ isShift, isAlt }) => {
 			const isPickerOpen = foundry.applications.instances.get('token-stack-picker')?.rendered;
-			const targetMode = isPickerOpen ? undefined : isShift ? 'all' : isAlt ? 'none' : undefined;
-			TokenStackPicker.open(undefined, { targetMode });
+			TokenStackPicker.open({ mode: isPickerOpen ? undefined : isShift ? 'target' : isAlt ? 'untarget' : undefined });
 			return true;
 		}
 	});
 	game.modules.get('token-stack-picker').api = {
-		open: (canvasPoint, options) => TokenStackPicker.open(canvasPoint, options)
+		open: (options) => TokenStackPicker.open(options ?? {})
 	};
 });

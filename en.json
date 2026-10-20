@@ -15,7 +15,7 @@
 			},
 			"TargetColor": {
 				"Name": "Target Color",
-				"Hint": "Color of the target on targeted tokens"
+				"Hint": "Color of the arrows on targeted tokens"
 			},
 			"ControlColor": {
 				"Name": "Control Color",
@@ -25,7 +25,7 @@
 		"Keybindings": {
 			"Open": {
 				"Name": "Open Token Stack Picker",
-				"Hint": "Open the token stack picker window at the current mouse position. Hold Shift to target every token in the stack or Alt to clear all targets"
+				"Hint": "Open the token stack picker window at the current mouse position. Hold Shift to target every visible token in the stack or Alt to untarget every visible token in the stack"
 			}
 		}
 	}
