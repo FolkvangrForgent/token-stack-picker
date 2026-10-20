@@ -47,17 +47,14 @@ class TokenStackPicker extends foundry.applications.api.ApplicationV2 {
 		gridElement.className = 'grid';
 		for (const tokenIdentifier of this.options.tokenIdentifiers) {
 			const tokenObject = canvas.tokens.get(tokenIdentifier);
-			if (tokenObject) {
+			if (tokenObject?.isVisible) {
 				// create portrait element
 				const portraitElement = document.createElement('div');
 				portraitElement.className = 'portrait';
 				portraitElement.classList.toggle('targeted', tokenObject.isTargeted);
 				portraitElement.classList.toggle('controlled', tokenObject.controlled);
-				portraitElement.classList.toggle('obscured', !(tokenObject.document.isOwner || !tokenObject.detectionFilter));
 				portraitElement.dataset.tokenIdentifier = tokenObject.id;
-				if (!tokenObject.detectionFilter && (tokenObject.document.isOwner || tokenObject.document.playersCanSeeName)) {
-					portraitElement.dataset.tooltip = tokenObject.document.name;
-				}
+				this.#applyRevealState(portraitElement, tokenObject);
 				gridElement.append(portraitElement);
 				// create media element
 				const mediaSource = (game.settings.get('token-stack-picker', 'useActorArt') && tokenObject.actor?.img) || tokenObject.document.texture.src;
@@ -106,6 +103,8 @@ class TokenStackPicker extends foundry.applications.api.ApplicationV2 {
 			targetToken: this.#onTargetToken,
 			controlToken: this.#onControlToken,
 			deleteToken: this.#onDeleteToken,
+			updateToken: this.#onUpdateToken,
+			visibilityRefresh: this.#onVisibilityRefresh,
 			canvasTearDown: this.#dismiss
 		};
 	}
@@ -179,12 +178,40 @@ class TokenStackPicker extends foundry.applications.api.ApplicationV2 {
 		this.#dismiss();
 	};
 
+	#dismissIfEmpty() {
+		if (this.rendered && !this.element.querySelector('.portrait')) this.#dismiss();
+	}
+
+	#applyRevealState(portraitElement, token) {
+		portraitElement.classList.toggle('obscured', !(token.document.isOwner || !token.detectionFilter));
+		if (!token.detectionFilter && (token.document.isOwner || token.document.playersCanSeeName)) {
+			portraitElement.dataset.tooltip = token.document.name;
+		} else delete portraitElement.dataset.tooltip;
+	}
+
 	#onDeleteToken = (tokenDocument) => {
 		if (!this.rendered) return;
 		const portraitElement = this.element.querySelector(`[data-token-identifier="${tokenDocument.id}"]`);
 		if (!portraitElement) return;
 		portraitElement.remove();
-		if (!this.element.querySelector('.portrait')) this.#dismiss();
+		this.#dismissIfEmpty();
+	};
+
+	#onUpdateToken = async (tokenDocument, changes) => {
+		if (!this.rendered || !this.options.tokenIdentifiers.includes(tokenDocument.id)) return;
+		if (!['hidden', 'name', 'displayName', 'texture'].some((key) => key in changes)) return;
+		await this.render();
+		this.#dismissIfEmpty();
+	};
+
+	#onVisibilityRefresh = () => {
+		if (!this.rendered) return;
+		for (const portraitElement of this.element.querySelectorAll('.portrait')) {
+			const token = canvas.tokens.get(portraitElement.dataset.tokenIdentifier);
+			if (token?.isVisible) this.#applyRevealState(portraitElement, token);
+			else portraitElement.remove();
+		}
+		this.#dismissIfEmpty();
 	};
 
 	#getTokenFromEvent(mouseEvent) {
