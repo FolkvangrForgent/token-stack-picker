@@ -24,6 +24,7 @@ This module aims to make it easier to target or open sheets of tokens that are o
 | `Right Click`           | Control token                         |
 | `Alt` + `Right Click`   | Remove token from controlled token(s) |
 | `Shift` + `Right Click` | Add token to controlled token(s)      |
+| `Middle Click`          | Open actor sheet of token             |
 4. To close the window do any of the following:
 - Press `Esc`
 - Move Pointer outside window
