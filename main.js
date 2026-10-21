@@ -153,17 +153,16 @@ class TokenStackPicker extends foundry.applications.api.ApplicationV2 {
 
 	#renderPips(portraitElement, token) {
 		portraitElement.querySelector('.pips')?.remove();
-		const otherTargetingUsers = game.users.filter((user) => user !== game.user && user.targets.has(token));
-		if (!otherTargetingUsers.length) return;
 		const pipsElement = document.createElement('div');
 		pipsElement.className = 'pips';
-		for (const user of otherTargetingUsers) {
+		for (const user of token.targeted) {
+			if (user === game.user) continue;
 			const pipElement = document.createElement('span');
 			pipElement.className = 'pip';
 			pipElement.style.setProperty('--pip-color', String(user.color));
 			pipsElement.append(pipElement);
 		}
-		portraitElement.append(pipsElement);
+		if (pipsElement.childElementCount) portraitElement.append(pipsElement);
 	}
 
 	#dismiss = () => {
