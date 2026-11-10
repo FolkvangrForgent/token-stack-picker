@@ -89,6 +89,6 @@ api.open({ mode: 'untarget' });
 
 - English
 
-## AI Tool Use
+## AI Tools
 
 - Claude Sonnet 5.5
