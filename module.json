@@ -9,15 +9,11 @@
 	"authors": [
 		{
 			"name": "FolkvangrForgent"
-		},
-		{
-			"name": "Claude Sonnet 5.5",
-			"url": "https://www.anthropic.com"
 		}
 	],
 	"compatibility": {
 		"minimum": "14",
-		"verified": "14.368"
+		"verified": "14.370"
 	},
 	"esmodules": ["main.js"],
 	"styles": ["main.css"],

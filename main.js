@@ -6,7 +6,8 @@ class TokenStackPicker extends foundry.applications.api.ApplicationV2 {
 		id: 'token-stack-picker',
 		classes: ['token-stack-picker', 'application', 'themed'],
 		window: { frame: false },
-		tokenIdentifiers: []
+		tokenIdentifiers: [],
+		targetIconUrl: ''
 	};
 
 	static #openRequestCounter = 0;
@@ -27,12 +28,27 @@ class TokenStackPicker extends foundry.applications.api.ApplicationV2 {
 		if (!tokenIdentifiers.length) return;
 		if (mode === 'target') canvas.tokens.setTargets(tokenIdentifiers, { mode: 'acquire' });
 		else if (mode === 'untarget') canvas.tokens.setTargets(tokenIdentifiers, { mode: 'release' });
+		let targetIconUrl = '';
+		const targetIcon = String(game.settings.get('token-stack-picker', 'targetIcon') ?? '').trim();
+		if (targetIcon) {
+			const iconUrl = encodeURI(/^(https?:)?\/\//.test(targetIcon) ? targetIcon : foundry.utils.getRoute(targetIcon));
+			const iconLoads = await new Promise((resolve) => {
+				const probe = new Image();
+				probe.crossOrigin = 'anonymous';
+				probe.onload = () => resolve(true);
+				probe.onerror = () => resolve(false);
+				probe.src = iconUrl;
+			});
+			if (openRequest !== TokenStackPicker.#openRequestCounter) return;
+			if (iconLoads) targetIconUrl = iconUrl;
+		}
 		const globalPosition = canvas.stage.toGlobal(canvasPoint);
 		const { colorScheme, uiScale } = game.settings.get('core', 'uiConfig');
 		const windowCursorOffset = (GRID_PAD_PX + game.settings.get('token-stack-picker', 'gridSize') / 2) * uiScale;
 		const colorSchemeName = colorScheme.applications || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
 		return new this({
 			tokenIdentifiers,
+			targetIconUrl,
 			classes: [`theme-${colorSchemeName}`],
 			position: {
 				left: globalPosition.x - windowCursorOffset,
@@ -77,6 +93,7 @@ class TokenStackPicker extends foundry.applications.api.ApplicationV2 {
 	async _onFirstRender(renderContext, renderOptions) {
 		await super._onFirstRender(renderContext, renderOptions);
 		this.element.style.setProperty('--target-color', String(game.settings.get('token-stack-picker', 'targetColor')));
+		if (this.options.targetIconUrl) this.element.style.setProperty('--target-icon', `url("${this.options.targetIconUrl}")`);
 		this.element.style.setProperty('--control-color', String(game.settings.get('token-stack-picker', 'controlColor')));
 		this.element.style.setProperty('--grid-size', `${game.settings.get('token-stack-picker', 'gridSize')}px`);
 		this.element.style.setProperty('--grid-columns', game.settings.get('token-stack-picker', 'gridColumns'));
@@ -288,6 +305,13 @@ Hooks.once('init', () => {
 		scope: 'client',
 		config: true,
 		type: new foundry.data.fields.NumberField({ required: true, nullable: false, integer: true, min: 1, max: 6, step: 1, initial: 3 })
+	});
+	game.settings.register('token-stack-picker', 'targetIcon', {
+		name: 'TokenStackPicker.Settings.TargetIcon.Name',
+		hint: 'TokenStackPicker.Settings.TargetIcon.Hint',
+		scope: 'client',
+		config: true,
+		type: new foundry.data.fields.FilePathField({ categories: ['IMAGE'], required: true, nullable: false, blank: true, initial: '' })
 	});
 	game.settings.register('token-stack-picker', 'targetColor', {
 		name: 'TokenStackPicker.Settings.TargetColor.Name',

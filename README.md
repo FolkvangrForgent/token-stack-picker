@@ -2,7 +2,7 @@
 ![Latest Release Download Count](https://img.shields.io/github/downloads/FolkvangrForgent/token-stack-picker/latest/module.zip)
 ![Forge Installs](https://img.shields.io/badge/dynamic/json?label=Forge%20Installs&query=package.installs&suffix=%25&url=https%3A%2F%2Fforge-vtt.com%2Fapi%2Fbazaar%2Fpackage%2Ftoken-stack-picker&colorB=4aa94a)
 
-> **AI Disclaimer** - This module was created with the heavy use of AI coding. I have credited the AI model used as an author. Manual reviews and changes were made many times during the creation of this module.
+> **AI Disclaimer** - This module was created with the heavy use of AI coding. Manual reviews and changes were made many times during the creation of this module.
 
 # Token Stack Picker
 
@@ -47,6 +47,7 @@ The token portraits have the following elements:
 | Use Actor Art | World  | `Off`     | Show actor images instead of token images                                     |
 | Portrait Size | Client | `100`     | Size in pixels of each token portrait in the grid (50 to 200, in steps of 10) |
 | Grid Columns  | Client | `3`       | Maximum number of portraits per row in the grid (1 to 6)                      |
+| Target Icon   | Client | Empty     | Custom graphic to use as the target indicator mask                            |
 | Target Color  | Client | `#33BBEE` | Color of the arrows on targeted token(s)                                      |
 | Control Color | Client | `#EE7733` | Color of the highlight on controlled token(s)                                 |
 
@@ -87,3 +88,7 @@ api.open({ mode: 'untarget' });
 ## Languages
 
 - English
+
+## AI Tool Use
+
+- Claude Sonnet 5.5

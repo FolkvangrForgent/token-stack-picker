@@ -13,6 +13,10 @@
 				"Name": "Grid Columns",
 				"Hint": "Maximum number of portraits per row in the grid"
 			},
+			"TargetIcon": {
+				"Name": "Target Icon",
+				"Hint": "Custom graphic to use as the target indicator mask"
+			},
 			"TargetColor": {
 				"Name": "Target Color",
 				"Hint": "Color of the arrows on targeted tokens"
